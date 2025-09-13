@@ -1,0 +1,90 @@
+.table-wrap {
+    margin-top: 12px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.toolbar__title {
+    font-weight: 600;
+}
+
+.toolbar__search {
+    padding: 8px;
+    min-width: 260px;
+}
+
+.toolbar__pager {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pager-btn {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+.pager-btn:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.status {
+    color: crimson;
+    margin-bottom: 8px;
+}
+
+.table-container {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-scroll {
+    max-height: 60vh;
+    overflow: auto;
+}
+
+/* базовая таблица */
+.tickets-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tickets-table thead {
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+    z-index: 1;
+}
+
+.tickets-table th,
+.tickets-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: var(--w);
+    max-width: var(--w);
+}
+
+.tickets-table th {
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
+}
+
+.tickets-table__empty {
+    padding: 16px;
+    color: #666;
+}
