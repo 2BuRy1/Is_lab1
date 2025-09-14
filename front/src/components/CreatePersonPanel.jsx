@@ -1,12 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
+import "../styles/edit.css";
 
-const api = axios.create({
-    headers: { "Content-Type": "application/json" },
-});
+const api = axios.create({ headers: { "Content-Type": "application/json" } });
 
-const COLORS = ["GREEN", "RED", "ORANGE", "WHITE", "BROWN"];
-const COUNTRIES = ["GERMANY", "INDIA", "THAILAND", "SOUTH_KOREA", "JAPAN"];
+const COLORS = ["GREEN","RED","ORANGE","WHITE","BROWN"];
+const COUNTRIES = ["GERMANY","INDIA","THAILAND","SOUTH_KOREA","JAPAN"];
 
 export default function CreatePersonPanel({ onCreated }) {
     const [v, setV] = useState({
@@ -14,18 +13,38 @@ export default function CreatePersonPanel({ onCreated }) {
         hairColor: "", eyeColor: "",
         locX: "", locY: "", locZ: ""
     });
+    const [errors, setErrors] = useState({});
     const [busy, setBusy] = useState(false);
     const [msg, setMsg] = useState(null);
 
-    const set = k => e => setV(s => ({ ...s, [k]: e.target.value }));
+    const set = k => e => {
+        setV(s => ({ ...s, [k]: e.target.value }));
+        setErrors(err => ({ ...err, [k]: undefined }));
+    };
 
     const validate = () => {
-        if (!v.passportID.trim()) return "passportID обязателен";
-        if (!(Number(v.weight) > 0)) return "weight должен быть > 0";
-        if (!v.nationality) return "nationality обязателен";
-        if (!v.hairColor) return "hairColor обязателен";
-        if (v.locX === "" || v.locZ === "") return "Location: x и z обязательны";
-        return null;
+        const err = {};
+        const asNum = (x) => (x === "" ? NaN : Number(x));
+
+        if (!v.passportID.trim()) err.passportID = "Обязательное поле";
+        {
+            const n = asNum(v.weight);
+            if (!Number.isFinite(n) || !(n > 0)) err.weight = "Число > 0";
+        }
+        if (!v.nationality) err.nationality = "Выберите страну";
+        if (!v.hairColor)   err.hairColor   = "Выберите цвет";
+
+        // Location
+        {
+            const x = asNum(v.locX);
+            if (!Number.isFinite(x)) err.locX = "Число";
+            const z = asNum(v.locZ);
+            if (!Number.isFinite(z)) err.locZ = "Число";
+            // y может быть пустым → примем 0
+        }
+
+        setErrors(err);
+        return err;
     };
 
     const buildPayload = () => ({
@@ -37,44 +56,52 @@ export default function CreatePersonPanel({ onCreated }) {
         location: {
             x: Number(v.locX),
             y: v.locY === "" ? 0 : Number(v.locY),
-            z: Number(v.locZ)
-        }
+            z: Number(v.locZ),
+        },
     });
 
     const save = async () => {
         setMsg(null);
         const err = validate();
-        if (err) { setMsg({ ok:false, text: err }); return; }
+        if (Object.values(err).some(Boolean)) {
+            setMsg({ ok:false, text:"Исправьте выделенные поля" });
+            return;
+        }
         setBusy(true);
         try {
             const res = await api.post("/add_person", buildPayload());
-            setMsg({ ok:true, text: `Person id=${res.data?.id ?? "—"} создан` });
+            setMsg({ ok:true, text:`Person id=${res.data?.id ?? "—"} создан` });
             setV({ passportID:"", weight:"", nationality:"", hairColor:"", eyeColor:"", locX:"", locY:"", locZ:"" });
+            setErrors({});
             onCreated?.();
         } catch (e) {
-            setMsg({ ok:false, text: `Ошибка: ${e.response?.status || ""} ${e.response?.data || e.message}` });
+            setMsg({ ok:false, text:`Ошибка: ${e.response?.status || ""} ${e.response?.data || e.message}` });
         } finally { setBusy(false); }
     };
 
     return (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:12, maxWidth:760 }}>
+        <div className="form-grid" style={{ maxWidth:760 }}>
             <label>passportID *</label>
-            <input value={v.passportID} onChange={set("passportID")} />
+            <input className={errors.passportID ? "err" : ""} value={v.passportID} onChange={set("passportID")} />
+            {errors.passportID && <span className="help-err">{errors.passportID}</span>}
 
             <label>weight *</label>
-            <input type="number" step="0.01" min="0.01" value={v.weight} onChange={set("weight")} />
+            <input className={errors.weight ? "err" : ""} type="number" step="0.01" min="0.01" value={v.weight} onChange={set("weight")} />
+            {errors.weight && <span className="help-err">{errors.weight}</span>}
 
             <label>nationality *</label>
-            <select value={v.nationality} onChange={set("nationality")}>
+            <select className={errors.nationality ? "err" : ""} value={v.nationality} onChange={set("nationality")}>
                 <option value="">— выберите —</option>
                 {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+            {errors.nationality && <span className="help-err">{errors.nationality}</span>}
 
             <label>hairColor *</label>
-            <select value={v.hairColor} onChange={set("hairColor")}>
+            <select className={errors.hairColor ? "err" : ""} value={v.hairColor} onChange={set("hairColor")}>
                 <option value="">— выберите —</option>
                 {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+            {errors.hairColor && <span className="help-err">{errors.hairColor}</span>}
 
             <label>eyeColor</label>
             <select value={v.eyeColor} onChange={set("eyeColor")}>
@@ -82,20 +109,22 @@ export default function CreatePersonPanel({ onCreated }) {
                 {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            <div style={{ gridColumn: "1 / -1", fontWeight: 600, marginTop: 8 }}>Location</div>
+            <div className="fieldset">Location</div>
 
             <label>X *</label>
-            <input type="number" step="1" value={v.locX} onChange={set("locX")} />
+            <input className={errors.locX ? "err" : ""} type="number" step="1" value={v.locX} onChange={set("locX")} />
+            {errors.locX && <span className="help-err">{errors.locX}</span>}
 
             <label>Y</label>
             <input type="number" step="0.01" value={v.locY} onChange={set("locY")} />
 
             <label>Z *</label>
-            <input type="number" step="0.01" value={v.locZ} onChange={set("locZ")} />
+            <input className={errors.locZ ? "err" : ""} type="number" step="0.01" value={v.locZ} onChange={set("locZ")} />
+            {errors.locZ && <span className="help-err">{errors.locZ}</span>}
 
-            <div style={{ gridColumn:"1 / -1", display:"flex", gap:12, alignItems:"center" }}>
-                <button onClick={save} disabled={busy}>{busy ? "Сохраняю..." : "Создать Person"}</button>
-                {msg && <span style={{ color: msg.ok ? "green" : "crimson" }}>{msg.text}</span>}
+            <div className="actions" style={{ gridColumn:"1 / -1" }}>
+                <button className="btn" onClick={save} disabled={busy}>{busy ? "Сохраняю..." : "Создать Person"}</button>
+                {msg && <span style={{ marginLeft:12, color: msg.ok ? "green" : "crimson" }}>{msg.text}</span>}
             </div>
         </div>
     );

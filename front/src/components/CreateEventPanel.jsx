@@ -1,59 +1,83 @@
 import { useState } from "react";
 import axios from "axios";
+import "../styles/edit.css";
 
-const api = axios.create({
-    headers: { "Content-Type": "application/json" }
-});
+const api = axios.create({ headers: { "Content-Type": "application/json" } });
+const EVENT_TYPES = ["CONCERT","FOOTBALL","BASKETBALL"]; // подставь свои
 
 export default function CreateEventPanel({ onCreated }) {
     const [v, setV] = useState({ name: "", ticketsCount: "", eventType: "" });
+    const [errors, setErrors] = useState({});
     const [busy, setBusy] = useState(false);
     const [msg, setMsg] = useState(null);
 
-    const set = k => e => setV(s => ({ ...s, [k]: e.target.value }));
+    const set = k => e => {
+        setV(s => ({ ...s, [k]: e.target.value }));
+        setErrors(err => ({ ...err, [k]: undefined }));
+    };
+
+    const validate = () => {
+        const err = {};
+        const asNum = (x) => (x === "" ? NaN : Number(x));
+
+        if (!v.name.trim()) err.name = "Название обязательно";
+        {
+            const n = asNum(v.ticketsCount);
+            if (!Number.isInteger(n) || !(n > 0)) err.ticketsCount = "Целое число > 0";
+        }
+        setErrors(err);
+        return err;
+    };
 
     const save = async () => {
         setMsg(null);
-        if (!v.name.trim()) { setMsg({ ok:false, text:"Название обязательно" }); return; }
-        if (!(Number(v.ticketsCount) > 0)) { setMsg({ ok:false, text:"ticketsCount > 0" }); return; }
-
+        const err = validate();
+        if (Object.values(err).some(Boolean)) {
+            setMsg({ ok:false, text:"Исправьте выделенные поля" });
+            return;
+        }
         setBusy(true);
         try {
             const payload = {
                 name: v.name.trim(),
                 ticketsCount: Number(v.ticketsCount),
-                eventType: v.eventType || undefined
+                eventType: v.eventType || undefined,
             };
             const res = await api.post("/add_event", payload);
             setMsg({ ok:true, text:`Event id=${res.data?.id ?? "—"} создан` });
             setV({ name:"", ticketsCount:"", eventType:"" });
+            setErrors({});
             onCreated?.();
         } catch (e) {
             setMsg({ ok:false, text:`Ошибка: ${e.response?.status || ""} ${e.response?.data || e.message}` });
         } finally { setBusy(false); }
     };
 
-    const EVENT_TYPES = ["CONCERT","FOOTBALL","BASEBALL","BASKETBALL","OPERA"];
+    return (
+        <div className="form-grid" style={{ maxWidth:620 }}>
+            <label>Название *</label>
+            <input className={errors.name ? "err" : ""} value={v.name} onChange={set("name")} />
+            {errors.name && <span className="help-err">{errors.name}</span>}
 
-        return (
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:12, maxWidth:620 }}>
-                <label>Название *</label>
-                <input value={v.name} onChange={set("name")} />
+            <label>ticketsCount *</label>
+            <input
+                className={errors.ticketsCount ? "err" : ""}
+                type="number" min="1"
+                value={v.ticketsCount}
+                onChange={set("ticketsCount")}
+            />
+            {errors.ticketsCount && <span className="help-err">{errors.ticketsCount}</span>}
 
-                <label>ticketsCount *</label>
-                <input type="number" min="1" value={v.ticketsCount} onChange={set("ticketsCount")} />
+            <label>eventType</label>
+            <select value={v.eventType} onChange={set("eventType")}>
+                <option value="">— не задан —</option>
+                {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
 
-                <label>eventType</label>
-                <select value={v.eventType} onChange={set("eventType")}>
-                    <option value="">— не задан —</option>
-                    {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-
-                <div style={{ gridColumn:"1 / -1" }}>
-                    <button onClick={save} disabled={busy}>{busy ? "Сохраняю..." : "Создать Event"}</button>
-                    {msg && <span style={{ color: msg.ok ? "green" : "crimson", marginLeft:12 }}>{msg.text}</span>}
-                </div>
+            <div className="actions" style={{ gridColumn:"1 / -1" }}>
+                <button className="btn" onClick={save} disabled={busy}>{busy ? "Сохраняю..." : "Создать Event"}</button>
+                {msg && <span style={{ marginLeft:12, color: msg.ok ? "green" : "crimson" }}>{msg.text}</span>}
             </div>
-        );
-
+        </div>
+    );
 }

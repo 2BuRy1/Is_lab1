@@ -38,6 +38,7 @@ public class Ticket {
     private float price; //Значение поля должно быть больше 0
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TicketType type; //Поле не может быть null
 
     @Check(constraints = "discount > 0 and discount <= 100")
