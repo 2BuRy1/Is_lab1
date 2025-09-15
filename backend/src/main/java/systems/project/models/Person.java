@@ -9,8 +9,13 @@ import java.util.List;
 @Data
 @Entity
 public class Person {
+    @SequenceGenerator(
+            name = "person_seq_gen",
+            sequenceName = "person_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "person_seq_gen")
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(name = "eye_color")

@@ -1,13 +1,16 @@
 package systems.project.controllers;
 
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import systems.project.exceptions.InvalidDataException;
 import systems.project.models.CloneRequest;
 import systems.project.models.SellRequestDTO;
 import systems.project.models.Ticket;
 import systems.project.repositories.TicketRepository;
+import systems.project.services.TicketEventService;
 import systems.project.services.TicketService;
 
 import java.util.List;
@@ -19,12 +22,20 @@ import java.util.concurrent.CompletableFuture;
 public class TicketController {
 
 
+    private final TicketEventService events;
     private final TicketService ticketService;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketEventService events, TicketService ticketService) {
+        this.events = events;
         this.ticketService = ticketService;
     }
 
+
+    @GetMapping(path = "/tickets/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream() {
+        System.out.println("meow");
+        return events.subscribe();
+    }
 
     @GetMapping("/get_tickets")
     public CompletableFuture<ResponseEntity<Map<String, List<Ticket>>>> getTickets() {
@@ -32,19 +43,18 @@ public class TicketController {
 
     }
 
+
     @PostMapping("/add_ticket")
     public CompletableFuture<ResponseEntity<Map<String, Boolean>>> addTicket(@RequestBody Ticket ticket) {
-
         return ticketService.addTicket(ticket)
                 .thenApply(res -> {
-                    if (res.get("status")) return ResponseEntity.ok(res);
-
+                    if (res.get("status")) {
+                        events.publishChange("add", null);
+                        return ResponseEntity.ok(res);
+                    }
                     return ResponseEntity.badRequest().body(Map.of("status", false));
                 });
-
-
     }
-
 
     @GetMapping("get_ticket/{id}")
     public CompletableFuture<ResponseEntity<Ticket>> getTicket(@PathVariable Integer id) {
@@ -56,26 +66,40 @@ public class TicketController {
 
     @PostMapping("/update_ticket/{id}")
     public CompletableFuture<ResponseEntity<Void>> updateTicket(@PathVariable Integer id, @RequestBody Ticket ticket) {
-
         return ticketService.updateTicket(id, ticket)
-                .thenApply(res -> res ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build()
-                );
+                .thenApply(ok -> {
+                    if (ok) {
+                        events.publishChange("update", id);
+                        return ResponseEntity.ok().build();
+                    }
+                    return ResponseEntity.badRequest().build();
+                });
     }
 
     @DeleteMapping("/delete_ticket/{id}")
     public CompletableFuture<ResponseEntity<String>> deleteTicket(@PathVariable Long id) {
         return ticketService.removeTicket(id)
-                .thenApply(res -> res ? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Ошибка при удалении объекта, возможно его не существует")
-                );
-
-
+                .thenApply(ok -> {
+                    if (ok) {
+                        events.publishChange("delete", id.intValue());
+                        return ResponseEntity.ok().build();
+                    }
+                    return ResponseEntity.badRequest().body("Ошибка при удалении объекта, возможно его не существует");
+                });
     }
 
     @DeleteMapping("/delete_by_comment")
     public CompletableFuture<ResponseEntity<String>> delete_by_comment(@RequestParam String commentEq){
         return ticketService.deleteAllByComment(commentEq)
-                .thenApply(res -> res ? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Возможно не было найдено объектов с таким же Comment"));
+                .thenApply(ok -> {
+                    if (ok) {
+                        events.publishChange("bulk-delete", null);
+                        return ResponseEntity.ok().build();
+                    }
+                    return ResponseEntity.badRequest().body("Возможно не было найдено объектов с таким же Comment");
+                });
     }
+
 
     @GetMapping("/min_event_ticket")
     public CompletableFuture<ResponseEntity<Ticket>> minEventTicket() {
@@ -92,15 +116,30 @@ public class TicketController {
     @PostMapping("/sell_ticket")
     public CompletableFuture<ResponseEntity<Map<String, Boolean>>> sellTicket(@RequestBody SellRequestDTO req) {
         return ticketService.sellTicket(req.ticketId, req.personId, req.amount)
-                .thenApply(ok -> ok ? ResponseEntity.ok(Map.of("status", true))
-                        : ResponseEntity.badRequest().body(Map.of("status", false)));
+                .thenApply(ok -> {
+
+                    if(ok){
+                        events.publishChange("ticket-sell", null);
+                        return ResponseEntity.ok(Map.of("status", true));
+
+
+                }
+                            return ResponseEntity.badRequest().body(Map.of("status", false));
+                });
     }
 
     @PostMapping("/clone_vip")
     public CompletableFuture<ResponseEntity<Ticket>> cloneVip(@RequestBody CloneRequest req) {
         return ticketService.cloneVip(req.ticketId)
-                .thenApply(copy -> copy != null ? ResponseEntity.ok(copy)
-                        : ResponseEntity.badRequest().body(null));
+                .thenApply(copy ->{
+                    if(copy != null ){
+                        events.publishChange("vip-clone", null);
+                        return ResponseEntity.ok(copy);
+                    }
+
+                    return ResponseEntity.badRequest().body(null);
+
+                });
     }
 
 

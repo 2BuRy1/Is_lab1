@@ -13,7 +13,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Location {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(
+            name = "location_seq_gen",
+            sequenceName = "location_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "location_seq_gen")
     private Long id;
 
     @Column(nullable = false)

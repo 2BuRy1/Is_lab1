@@ -13,7 +13,12 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 public class Ticket {
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(
+            name = "ticket_seq_gen",
+            sequenceName = "ticket_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ticket_seq_gen")
     @Id
     private Integer id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
 

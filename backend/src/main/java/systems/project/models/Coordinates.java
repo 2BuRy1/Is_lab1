@@ -8,7 +8,12 @@ import lombok.Data;
 public class Coordinates {
 
 
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(
+            name = "coordinates_seq_gen",
+            sequenceName = "coordinates_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "coordinates_seq_gen")
     @Id
     private Long id;
     private int x;
