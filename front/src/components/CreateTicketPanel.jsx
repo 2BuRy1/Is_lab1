@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import "../styles/edit.css";
+import {api} from "./api";
 
-const api = axios.create({ headers: { "Content-Type": "application/json" } });
 
 const TICKET_TYPES = ["VIP","USUAL","BUDGETARY","CHEAP"];
 

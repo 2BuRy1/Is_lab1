@@ -1,8 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
 import "../styles/edit.css";
+import {api} from "./api";
 
-const api = axios.create({ headers: { "Content-Type": "application/json" } });
 
 const COLORS = ["GREEN","RED","ORANGE","WHITE","BROWN"];
 const COUNTRIES = ["GERMANY","INDIA","THAILAND","SOUTH_KOREA","JAPAN"];
@@ -34,7 +33,7 @@ export default function CreatePersonPanel({ onCreated }) {
         if (!v.nationality) err.nationality = "Выберите страну";
         if (!v.hairColor)   err.hairColor   = "Выберите цвет";
 
-        // Location
+
         {
             const x = asNum(v.locX);
             if (!Number.isFinite(x)) err.locX = "Число";

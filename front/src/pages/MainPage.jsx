@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import Table from "../components/Table";
 import "../styles/main.css";
+import {api} from "../components/api";
 
-const api = axios.create({ headers: { "Content-Type": "application/json" } });
 
 export default function MainPage() {
     const [reloadKey, setReloadKey] = useState(0);

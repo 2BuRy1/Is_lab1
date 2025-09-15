@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+
 import "../styles/edit.css";
+import {api} from "./api";
 
 const ENDPOINTS = {
     getTicket:    (id) => `/get_ticket/${id}`,
@@ -48,10 +49,10 @@ export default function EditTicketPage() {
         (async () => {
             try {
                 const [tRes, pRes, eRes, vRes] = await Promise.all([
-                    axios.get(ENDPOINTS.getTicket(id)),
-                    axios.get(ENDPOINTS.persons),
-                    axios.get(ENDPOINTS.events),
-                    axios.get(ENDPOINTS.venues),
+                    api.get(ENDPOINTS.getTicket(id)),
+                    api.get(ENDPOINTS.persons),
+                    api.get(ENDPOINTS.events),
+                    api.get(ENDPOINTS.venues),
                 ]);
 
                 if (cancelled) return;
@@ -191,7 +192,7 @@ export default function EditTicketPage() {
         setStatus(null);
         try {
             const payload = buildFullPayload();
-            await axios.post(ENDPOINTS.updateTicket(id), payload);
+            await api.post(ENDPOINTS.updateTicket(id), payload);
             navigate("/");
         } catch (e) {
             setStatus(`Ошибка сохранения: ${e.response?.status || e.message}`);

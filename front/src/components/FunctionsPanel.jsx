@@ -1,9 +1,8 @@
 import "../styles/function.css";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import {api} from "./api";
 
-const api = axios.create({ headers: { "Content-Type": "application/json" } });
 
 const ENDPOINTS = {
     deleteByComment: "/delete_by_comment",
