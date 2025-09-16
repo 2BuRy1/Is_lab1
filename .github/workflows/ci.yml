@@ -7,6 +7,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: test
         run: cd ./backend
-          ./gradlew test
+      - name: test
+        run: ./gradlew test
