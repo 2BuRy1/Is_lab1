@@ -179,7 +179,7 @@ class BackendApplicationTests {
         // Then
         assertTrue(res.get("status"));
         verify(locationRepository).save(same(loc));
-        verify(personRepository).save(same(person));
+        verify(personRepository, times(2)).save(same(person));
     }
 
 
