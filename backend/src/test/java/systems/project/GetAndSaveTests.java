@@ -12,19 +12,15 @@ import systems.project.services.PersonService;
 import systems.project.services.TicketService;
 import systems.project.services.VenueService;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class BackendApplicationTests {
+class GetAndSaveTests {
 
     @InjectMocks
     EventService eventService;
@@ -134,20 +130,7 @@ class BackendApplicationTests {
         verify(ticketRepository).save(same(ticket));
     }
 
-    @Test
-    void testFailAddTicket() throws ExecutionException, InterruptedException {
-        // Given
-        Ticket ticket = mock();
 
-        // When
-        when(ticketRepository.save(any(Ticket.class))).thenThrow(new RuntimeException("db down"));
-        var res = ticketService.addTicket(ticket).get();
-
-
-        // Then
-        assertFalse(res.get("status"));
-        verify(ticketRepository).save(same(ticket));
-    }
 
     @Test
     void testAddEvent() throws ExecutionException, InterruptedException {
@@ -179,8 +162,104 @@ class BackendApplicationTests {
         // Then
         assertTrue(res.get("status"));
         verify(locationRepository).save(same(loc));
-        verify(personRepository, times(2)).save(same(person));
+        verify(personRepository).save(same(person));
     }
+
+    @Test
+    void testAddVenue() throws ExecutionException, InterruptedException {
+        //Given
+        Venue venue = mock();
+
+        //When
+        when(venueRepository.save(any(Venue.class))).thenReturn(venue);
+        var res = venueService.addVenue(venue).get();
+
+        //Then
+        assertTrue(res.get("status"));
+        verify(venueRepository).save(same(venue));
+    }
+
+    @Test
+    void testFailAddTicket() throws ExecutionException, InterruptedException {
+        // Given
+        Ticket ticket = mock();
+
+        // When
+        when(ticketRepository.save(any(Ticket.class))).thenThrow(new RuntimeException("db down"));
+        var res = ticketService.addTicket(ticket).get();
+
+
+        // Then
+        assertFalse(res.get("status"));
+        verify(ticketRepository).save(same(ticket));
+    }
+
+    @Test
+    void testFailAddEvent() throws ExecutionException, InterruptedException {
+        //Given
+        Event event = mock();
+
+        //When
+        when(eventRepository.save(any(Event.class))).thenThrow(new RuntimeException("failed to add"));
+        var res = eventService.addEvent(event).get();
+
+        assertFalse(res.get("status"));
+        verify(eventRepository).save(same(event));
+    }
+
+    @Test
+    void testFailAddPersonOnLocationFailure() throws Exception {
+        // Given
+        Person person = new Person();
+        Location location = new Location();
+        person.setLocation(location);
+
+        // When
+        when(locationRepository.save(any(Location.class))).thenThrow(new RuntimeException("failed to add"));
+
+        var res = personService.addPerson(person).get();
+
+        // Then
+        assertFalse(res.get("status"));
+        verify(locationRepository).save(same(location));
+        verifyNoInteractions(personRepository);
+    }
+
+    @Test
+    void testFailAddPersonOnPersonFailure() throws Exception {
+        // Given
+        Person person = new Person();
+        Location location = new Location();
+        person.setLocation(location);
+
+        // When
+        when(locationRepository.save(any(Location.class))).thenReturn(location);
+        when(personRepository.save(any(Person.class))).thenThrow(new RuntimeException("failed to add"));
+
+        var res = personService.addPerson(person).get();
+
+        // Then
+        assertFalse(res.get("status"));
+        verify(locationRepository).save(same(location));
+        verify(personRepository).save(same(person));
+    }
+
+    @Test
+    void testFailAddVenue() throws ExecutionException, InterruptedException {
+        //Given
+        Venue venue = mock();
+
+        //When
+        when(venueRepository.save(any(Venue.class))).thenThrow(new RuntimeException("failed to add"));
+        var res = venueService.addVenue(venue).get();
+
+        assertFalse(res.get("status"));
+        verify(venueRepository).save(same(venue));
+    }
+
+
+
+
 
 
 
