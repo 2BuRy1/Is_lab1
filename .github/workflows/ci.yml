@@ -9,4 +9,4 @@ jobs:
         uses: actions/checkout@v4
       - name: test
         run: cd ./backend
-        run: ./gradlew test
+          ./gradlew test
