@@ -29,10 +29,13 @@ public class EventController {
     }
 
     @PostMapping("/add_event")
-    public CompletableFuture<ResponseEntity<Map<String, String>>> add_event(@RequestBody Event event){
+    public CompletableFuture<ResponseEntity<Map<String, Boolean>>> add_event(@RequestBody Event event){
 
         return service.addEvent(event)
-                .thenApply(ResponseEntity::ok);
+                .thenApply(res ->{
+                    if(res.get("status")) return ResponseEntity.ok(res);
+                    return ResponseEntity.badRequest().body(Map.of("status", false));
+                });
     }
 
 

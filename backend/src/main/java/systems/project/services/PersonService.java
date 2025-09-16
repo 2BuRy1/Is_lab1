@@ -18,31 +18,28 @@ public class PersonService {
     private final PersonRepository personRepository;
 
     private final LocationRepository locationRepository;
+
     public PersonService(PersonRepository personRepository, LocationRepository locationRepository) {
         this.personRepository = personRepository;
         this.locationRepository = locationRepository;
     }
 
-    public CompletableFuture<Map<String, List<Person>>> getPersons(){
+    public CompletableFuture<Map<String, List<Person>>> getPersons() {
         return CompletableFuture.supplyAsync(personRepository::findAll)
                 .thenApply(persons -> Map.of("persons", persons))
                 .exceptionally(ex -> Map.of("persons", null));
     }
 
 
-    public CompletableFuture<Map<String, Boolean>> addPerson(Person person){
+    public CompletableFuture<Map<String, Boolean>> addPerson(Person person) {
         return CompletableFuture.supplyAsync(() -> {
-
-            return CompletableFuture.supplyAsync(() -> locationRepository.save(person.getLocation()))
-                            .thenApply(loc -> personRepository.save(person));
-                        }
-                )
-                .thenApply(pers -> Map.of("status", true))
-                .exceptionally(ex -> {
-
-                    System.out.println(ex.getMessage());
-                    return Map.of("status", false);
-                });
-
+            var savedLoc = locationRepository.save(person.getLocation());
+            person.setLocation(savedLoc);
+            personRepository.save(person);
+            return Map.of("status", true);
+        }).exceptionally(ex -> {
+            System.out.println(ex.getMessage());
+            return Map.of("status", false);
+        });
     }
 }

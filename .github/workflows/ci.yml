@@ -1,0 +1,12 @@
+name: TestCheck
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: test
+        run: cd ./backend
+        run: ./gradlew test

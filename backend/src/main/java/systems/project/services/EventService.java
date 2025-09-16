@@ -26,10 +26,10 @@ public class EventService {
                     .exceptionally(exc -> Map.of("events", null));
     }
 
-    public CompletableFuture<Map<String, String>> addEvent(Event event) {
+    public CompletableFuture<Map<String, Boolean>> addEvent(Event event) {
         return CompletableFuture.supplyAsync(() -> eventRepository.save(event))
-                .thenApply(evnt -> Map.of("status", "added"))
-                    .exceptionally(exc -> Map.of("status", "failed" + exc.getMessage()));
+                .thenApply(evnt -> Map.of("status", true))
+                    .exceptionally(exc -> Map.of("status", false));
     }
 
 

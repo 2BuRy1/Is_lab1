@@ -51,24 +51,24 @@ public class TicketService {
 
     public CompletableFuture<Boolean> updateTicket(Integer id, Ticket ticket) {
         return CompletableFuture.supplyAsync(() -> {
-            if (ticketRepository.existsById(id)) {
-                ticket.setId(id);
-                ticketRepository.save(ticket);
-                return true;
-            }
-            return false;
-        })
+                    if (ticketRepository.existsById(id)) {
+                        ticket.setId(id);
+                        ticketRepository.save(ticket);
+                        return true;
+                    }
+                    return false;
+                })
                 .exceptionally(exc -> false);
     }
 
     public CompletableFuture<Boolean> removeTicket(Long id) {
         return CompletableFuture.supplyAsync(() -> {
-            if (ticketRepository.existsById(id)) {
-                ticketRepository.deleteById(id);
-                return true;
-            }
-            return false;
-        })
+                    if (ticketRepository.existsById(id)) {
+                        ticketRepository.deleteById(id);
+                        return true;
+                    }
+                    return false;
+                })
                 .exceptionally(exc -> false);
 
     }
@@ -103,7 +103,7 @@ public class TicketService {
         return CompletableFuture.supplyAsync(() -> {
             var ticket = ticketRepository.findById(ticketId);
             var person = personRepository.findById(Long.valueOf(personId));
-            if (ticket.isEmpty() || person.isEmpty() || amount <= 0f) return false;
+            if (ticket.isEmpty() || person.isEmpty() ||  amount <= 0f) return false;
 
             var t = ticket.get();
             t.setPrice(amount);
@@ -112,14 +112,13 @@ public class TicketService {
             return true;
         }).exceptionally(ex -> false);
     }
-
     public CompletableFuture<Ticket> cloneVip(Integer ticketId) {
         return CompletableFuture.supplyAsync(() -> {
             var src = ticketRepository.findById(ticketId).orElse(null);
             if (src == null) return null;
 
             var copy = new Ticket();
-            copy.setId(null); // новый
+            copy.setId(null);
             copy.setName(src.getName());
             copy.setCreationDate(LocalDateTime.now());
             copy.setPerson(src.getPerson());

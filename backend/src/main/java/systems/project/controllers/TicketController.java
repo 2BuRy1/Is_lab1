@@ -89,7 +89,7 @@ public class TicketController {
     }
 
     @DeleteMapping("/delete_by_comment")
-    public CompletableFuture<ResponseEntity<String>> delete_by_comment(@RequestParam String commentEq){
+    public CompletableFuture<ResponseEntity<String>> deleteByComment(@RequestParam String commentEq) {
         return ticketService.deleteAllByComment(commentEq)
                 .thenApply(ok -> {
                     if (ok) {
@@ -99,8 +99,6 @@ public class TicketController {
                     return ResponseEntity.badRequest().body("Возможно не было найдено объектов с таким же Comment");
                 });
     }
-
-
     @GetMapping("/min_event_ticket")
     public CompletableFuture<ResponseEntity<Ticket>> minEventTicket() {
         return ticketService.getWithMinEvent()
@@ -123,8 +121,8 @@ public class TicketController {
                         return ResponseEntity.ok(Map.of("status", true));
 
 
-                }
-                            return ResponseEntity.badRequest().body(Map.of("status", false));
+                    }
+                    return ResponseEntity.badRequest().body(Map.of("status", false));
                 });
     }
 
