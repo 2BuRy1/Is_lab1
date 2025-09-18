@@ -5,19 +5,39 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import systems.project.models.*;
-import systems.project.repositories.*;
+import systems.project.models.Event;
+import systems.project.models.Ticket;
+import systems.project.models.Person;
+import systems.project.models.Location;
+import systems.project.models.Venue;
+import systems.project.repositories.PersonRepository;
+import systems.project.repositories.TicketRepository;
+import systems.project.repositories.EventRepository;
+import systems.project.repositories.VenueRepository;
+import systems.project.repositories.LocationRepository;
+
+
 import systems.project.services.EventService;
 import systems.project.services.PersonService;
 import systems.project.services.TicketService;
 import systems.project.services.VenueService;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.verifyNoInteractions;
+
 
 @ExtendWith(MockitoExtension.class)
 class GetAndSaveTests {
@@ -57,13 +77,13 @@ class GetAndSaveTests {
         List<Ticket> tickets = mock();
 
         //When
-        when(ticketRepository.findAll()).thenReturn(tickets);
+        when(ticketRepository.findAllBy()).thenReturn(CompletableFuture.completedFuture(tickets));
         var res = ticketService.getTickets().get();
 
 
         //Then
         assertNotNull(res.get("tickets"));
-        verify(ticketRepository).findAll();
+        verify(ticketRepository).findAllBy();
 
     }
 
@@ -73,12 +93,12 @@ class GetAndSaveTests {
         List<Event> events = mock();
 
         //When
-        when(eventRepository.findAll()).thenReturn(events);
+        when(eventRepository.findAllBy()).thenReturn(CompletableFuture.completedFuture(events));
         var res = eventService.getEvents().get();
 
         //Then
         assertNotNull(res.get("events"));
-        verify(eventRepository).findAll();
+        verify(eventRepository).findAllBy();
 
     }
 
@@ -88,7 +108,7 @@ class GetAndSaveTests {
         List<Person> persons = mock();
 
         //When
-        when(personRepository.findAll()).thenReturn(persons);
+        when(personRepository.findAllBy()).thenReturn(CompletableFuture.completedFuture(List.of(new Person())));
         var res = personService.getPersons().get();
 
 
@@ -120,7 +140,8 @@ class GetAndSaveTests {
         Ticket ticket = mock();
 
         // When
-        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(ticketRepository.save(any(Ticket.class))).
+                thenReturn(ticket);
         var res = ticketService.addTicket(ticket).get();
 
 
@@ -153,8 +174,10 @@ class GetAndSaveTests {
         Person person = new Person();
         person.setLocation(loc);
 
-        when(locationRepository.save(any(Location.class))).thenReturn(loc);
-        when(personRepository.save(any(Person.class))).thenReturn(person);
+        when(locationRepository.save(any(Location.class))).
+                thenReturn(loc);
+        when(personRepository.save(any(Person.class))).
+                thenReturn(person);
 
         // When
         var res = personService.addPerson(person).get();
@@ -233,7 +256,8 @@ class GetAndSaveTests {
         person.setLocation(location);
 
         // When
-        when(locationRepository.save(any(Location.class))).thenReturn(location);
+        when(locationRepository.save(any(Location.class))).
+                thenReturn(location);
         when(personRepository.save(any(Person.class))).thenThrow(new RuntimeException("failed to add"));
 
         var res = personService.addPerson(person).get();

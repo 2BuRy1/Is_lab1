@@ -1,6 +1,7 @@
 package systems.project.services;
 
 import jakarta.transaction.Transactional;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import systems.project.models.Coordinates;
 import systems.project.models.Ticket;
@@ -8,17 +9,17 @@ import systems.project.models.TicketType;
 import systems.project.repositories.PersonRepository;
 import systems.project.repositories.TicketRepository;
 
-import java.beans.Transient;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 @Service
 public class TicketService {
 
     private final TicketRepository ticketRepository;
-
     private final PersonRepository personRepository;
 
     public TicketService(TicketRepository ticketRepository, PersonRepository personRepository) {
@@ -26,120 +27,144 @@ public class TicketService {
         this.personRepository = personRepository;
     }
 
-
     public CompletableFuture<Map<String, List<Ticket>>> getTickets() {
-        return CompletableFuture.supplyAsync(ticketRepository::findAll)
-                .thenApply(ticket -> Map.of("tickets", ticket))
-                .exceptionally(ex -> Map.of("tickets", null));
+        return ticketRepository.findAllBy()
+                .thenApply(list -> Map.of("tickets", list))
+                .exceptionally(exc -> Map.of("tickets", null));
     }
 
-
+    @Async
     public CompletableFuture<Map<String, Boolean>> addTicket(Ticket ticket) {
-        return CompletableFuture.supplyAsync(() -> ticketRepository.save(ticket))
-                .thenApply(ticket1 -> Map.of("status", true))
-                .exceptionally(ex -> Map.of("status", false));
-
+        try {
+            ticketRepository.save(ticket);
+            return completedFuture(Map.of("status", true));
+        } catch (Exception e) {
+            return completedFuture(Map.of("status", false));
+        }
     }
 
     public CompletableFuture<Ticket> getTicket(Integer id) {
-        return CompletableFuture.supplyAsync(() -> {
-            var optional = ticketRepository.findById(id);
-            return optional.orElse(null);
-        }).exceptionally(exc -> null);
-
+        return ticketRepository.findById(id)
+                .thenApply(res -> res.orElse(null))
+                .exceptionally(exc -> null);
     }
 
+    @Async
     public CompletableFuture<Boolean> updateTicket(Integer id, Ticket ticket) {
-        return CompletableFuture.supplyAsync(() -> {
-                    if (ticketRepository.existsById(id)) {
+        return ticketRepository.existsById(id)
+                .thenCompose(exists -> {
+                    if (!exists) return completedFuture(false);
+                    try {
                         ticket.setId(id);
                         ticketRepository.save(ticket);
-                        return true;
+                        return completedFuture(true);
+                    } catch (Exception e) {
+                        return completedFuture(false);
                     }
-                    return false;
                 })
                 .exceptionally(exc -> false);
     }
 
-    public CompletableFuture<Boolean> removeTicket(Long id) {
-        return CompletableFuture.supplyAsync(() -> {
-                    if (ticketRepository.existsById(id)) {
+    @Async
+    @Transactional
+    public CompletableFuture<Boolean> removeTicket(Integer id) {
+        return ticketRepository.existsById(id)
+                .thenCompose(exists -> {
+                    if (!exists) return completedFuture(false);
+                    try {
                         ticketRepository.deleteById(id);
-                        return true;
+                        return completedFuture(true);
+                    } catch (Exception e) {
+                        return completedFuture(false);
                     }
-                    return false;
                 })
                 .exceptionally(exc -> false);
-
     }
 
-
+    @Async
+    @Transactional
     public CompletableFuture<Boolean> deleteAllByComment(String comment) {
-        return CompletableFuture.supplyAsync(() -> {
-            String c = comment == null ? "" : comment.trim();
-            if (c.isEmpty()) return false;
-            long removed = ticketRepository.deleteByComment(c);
-            return removed > 0;
-        }).exceptionally(ex -> {
-            ex.printStackTrace();
-            return false;
-        });
+        String c = comment == null ? "" : comment.trim();
+        if (c.isEmpty()) return completedFuture(false);
+        return ticketRepository.deleteByComment(c)
+                .thenApply(removed -> removed != null && removed > 0)
+                .exceptionally(exc -> false);
     }
 
+    @Async
     public CompletableFuture<Ticket> getWithMinEvent() {
-        return CompletableFuture.supplyAsync(() ->
-                ticketRepository.findFirstByEventIsNotNullOrderByEvent_IdAsc().orElse(null)
-        ).exceptionally(ex -> null);
+        return ticketRepository.findFirstByEventIsNotNullOrderByEventIdAsc()
+                .thenApply(res -> res.orElse(null))
+                .exceptionally(exc -> null);
     }
 
-
+    @Async
     public CompletableFuture<Map<String, Long>> countByCommentLess(String comment) {
-        return CompletableFuture.supplyAsync(() ->
-                Map.of("count", ticketRepository.countByCommentLessThan(comment))
-        ).exceptionally(ex -> Map.of("count", 0L));
+        return ticketRepository.countByCommentLessThan(comment)
+                .thenApply(res -> Map.of("count", res == null ? 0L : res))
+                .exceptionally(ex -> Map.of("count", 0L));
     }
 
+    @Async
     public CompletableFuture<Boolean> sellTicket(Integer ticketId, Integer personId, float amount) {
-        return CompletableFuture.supplyAsync(() -> {
-            var ticket = ticketRepository.findById(ticketId);
-            var person = personRepository.findById(Long.valueOf(personId));
-            if (ticket.isEmpty() || person.isEmpty() ||  amount <= 0f) return false;
+        if (amount <= 0f) return completedFuture(false);
 
-            var t = ticket.get();
-            t.setPrice(amount);
-            t.setPerson(person.get());
-            ticketRepository.save(t);
-            return true;
-        }).exceptionally(ex -> false);
+        return ticketRepository.findById(ticketId)
+                .thenCompose(tOpt ->
+                        tOpt.map(ticket ->
+                                personRepository.findById(personId)
+                                        .thenCompose(pOpt -> {
+                                            if (pOpt.isEmpty()) return completedFuture(false);
+                                            try {
+                                                ticket.setPrice(amount);
+                                                ticket.setPerson(pOpt.get());
+                                                ticketRepository.save(ticket);
+                                                return completedFuture(true);
+                                            } catch (Exception e) {
+                                                return completedFuture(false);
+                                            }
+                                        })
+                        ).orElseGet(() -> completedFuture(false))
+                )
+                .exceptionally(exc -> false);
     }
+
+    @Async
     public CompletableFuture<Ticket> cloneVip(Integer ticketId) {
-        return CompletableFuture.supplyAsync(() -> {
-            var src = ticketRepository.findById(ticketId).orElse(null);
-            if (src == null) return null;
+        return ticketRepository.findById(ticketId)
+                .thenCompose(srcOpt -> {
+                    if (srcOpt.isEmpty()) return completedFuture(null);
 
-            var copy = new Ticket();
-            copy.setId(null);
-            copy.setName(src.getName());
-            copy.setCreationDate(LocalDateTime.now());
-            copy.setPerson(src.getPerson());
-            copy.setEvent(src.getEvent());
-            copy.setVenue(src.getVenue());
-            copy.setComment(src.getComment());
-            copy.setNumber(src.getNumber());
-            copy.setDiscount(src.getDiscount());
+                    var src = srcOpt.get();
+                    var copy = new Ticket();
+                    copy.setId(null);
+                    copy.setName(src.getName());
+                    copy.setCreationDate(LocalDateTime.now());
+                    copy.setPerson(src.getPerson());
+                    copy.setEvent(src.getEvent());
+                    copy.setVenue(src.getVenue());
+                    copy.setComment(src.getComment());
+                    copy.setNumber(src.getNumber());
+                    copy.setDiscount(src.getDiscount());
 
-            if (src.getCoordinates() != null) {
-                var c0 = src.getCoordinates();
-                var c1 = new Coordinates();
-                c1.setX(c0.getX());
-                c1.setY(c0.getY());
-                copy.setCoordinates(c1);
-            }
+                    if (src.getCoordinates() != null) {
+                        var c0 = src.getCoordinates();
+                        var c1 = new Coordinates();
+                        c1.setX(c0.getX());
+                        c1.setY(c0.getY());
+                        copy.setCoordinates(c1);
+                    }
 
-            copy.setType(TicketType.VIP);
-            copy.setPrice(src.getPrice() * 2.0f);
+                    copy.setType(TicketType.VIP);
+                    copy.setPrice(src.getPrice() * 2.0f);
 
-            return ticketRepository.save(copy);
-        }).exceptionally(ex -> null);
+                    try {
+                        var saved = ticketRepository.save(copy);
+                        return completedFuture(saved);
+                    } catch (Exception e) {
+                        return completedFuture(null);
+                    }
+                })
+                .exceptionally(ex -> null);
     }
 }

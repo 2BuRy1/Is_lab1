@@ -5,7 +5,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.OngoingStubbing;
 import systems.project.models.Coordinates;
 import systems.project.models.Person;
 import systems.project.models.Ticket;
@@ -15,12 +14,27 @@ import systems.project.repositories.TicketRepository;
 import systems.project.services.TicketService;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+
 
 @ExtendWith(MockitoExtension.class)
 public class TicketServiceTests {
@@ -40,7 +54,8 @@ public class TicketServiceTests {
         Ticket ticket = mock();
 
         //When
-        when(ticketRepository.findById(any(Integer.class))).thenReturn(Optional.of(ticket));
+        when(ticketRepository.findById(any(Integer.class))).thenReturn(CompletableFuture.
+                completedFuture(Optional.of(ticket)));
         var res = service.getTicket(5).get();
 
         //Then
@@ -50,7 +65,8 @@ public class TicketServiceTests {
     @Test
     void testGetEmptyTicket() throws ExecutionException, InterruptedException {
         //When
-        when(ticketRepository.findById(any(Integer.class))).thenReturn(Optional.empty());
+        when(ticketRepository.findById(any(Integer.class))).thenReturn(CompletableFuture.
+                completedFuture(Optional.empty()));
         var res = service.getTicket(5).get();
 
         assertNull(res);
@@ -59,7 +75,8 @@ public class TicketServiceTests {
     @Test
     void testFailGetTicket() throws ExecutionException, InterruptedException {
         //When
-        when(ticketRepository.findById(any(Integer.class))).thenThrow(new RuntimeException("error happened"));
+        when(ticketRepository.findById(any(Integer.class))).
+                thenReturn(CompletableFuture.failedFuture(new RuntimeException("fail")));
         var res = service.getTicket(5).get();
 
         //Then
@@ -72,7 +89,8 @@ public class TicketServiceTests {
         Ticket ticket = mock();
 
         //When
-        when(ticketRepository.existsById(any(Integer.class))).thenReturn(true);
+        when(ticketRepository.existsById(any(Integer.class))).
+                thenReturn(CompletableFuture.completedFuture(true));
         var res = service.updateTicket(5, ticket).get();
 
         //Then
@@ -86,7 +104,8 @@ public class TicketServiceTests {
         Ticket ticket = mock();
 
         //When
-        when(ticketRepository.existsById(any(Integer.class))).thenReturn(false);
+        when(ticketRepository.existsById(any(Integer.class))).
+                thenReturn(CompletableFuture.completedFuture(false));
         var res = service.updateTicket(5, ticket).get();
 
         //Then
@@ -99,7 +118,8 @@ public class TicketServiceTests {
         Ticket ticket = mock();
 
         //When
-        when(ticketRepository.existsById(any(Integer.class))).thenThrow(new RuntimeException("error happened"));
+        when(ticketRepository.existsById(any(Integer.class))).
+                thenReturn(CompletableFuture.failedFuture(new RuntimeException("fail")));
         var res = service.updateTicket(5, ticket).get();
 
         //Then
@@ -109,9 +129,9 @@ public class TicketServiceTests {
     @Test
     void testRemoveTicket() throws ExecutionException, InterruptedException {
         //When
-        when(ticketRepository.existsById(anyLong())).thenReturn(true);
-        doNothing().when(ticketRepository).deleteById(anyLong());
-        var res = service.removeTicket(5L).get();
+        when(ticketRepository.existsById(anyInt())).thenReturn(CompletableFuture.completedFuture(true));
+        when(ticketRepository.deleteById(anyInt())).thenReturn(CompletableFuture.completedFuture(mock()));
+        var res = service.removeTicket(5).get();
 
         //Then
         assertTrue(res);
@@ -120,28 +140,31 @@ public class TicketServiceTests {
     @Test
     void testNotFoundWhileDelete() throws ExecutionException, InterruptedException {
         //When
-        when(ticketRepository.existsById(anyLong())).thenReturn(false);
-        var res = service.removeTicket(5L).get();
+        when(ticketRepository.existsById(anyInt())).thenReturn(CompletableFuture.completedFuture(false));
+        var res = service.removeTicket(5).get();
 
         //Then
         assertFalse(res);
     }
 
     @Test
-    void testFailDelete() throws ExecutionException, InterruptedException {
-        //When
-        when(ticketRepository.existsById(anyLong())).thenReturn(true);
-        doThrow(new RuntimeException("error happened")).when(ticketRepository).deleteById(anyLong());
-        var res = service.removeTicket(5L).get();
+    void testFailDelete() throws Exception {
+        // When
+        when(ticketRepository.existsById(anyInt()))
+                .thenReturn(CompletableFuture.completedFuture(true));
+        doThrow(new RuntimeException("error happened")).when(ticketRepository).deleteById(anyInt());
 
-        //Then
+        var res = service.removeTicket(5).get();
+
+        // Then
         assertFalse(res);
     }
 
     @Test
     void testDeleteAllByComment() throws Exception {
         // When
-        when(ticketRepository.deleteByComment("abc")).thenReturn(2L);
+        when(ticketRepository.deleteByComment("abc")).
+                thenReturn(CompletableFuture.completedFuture(5L));
         var res = service.deleteAllByComment("abc").get();
 
         // Then
@@ -151,7 +174,8 @@ public class TicketServiceTests {
     @Test
     void testDeleteAllByCommentNone() throws Exception {
         // When
-        when(ticketRepository.deleteByComment("abc")).thenReturn(0L);
+        when(ticketRepository.deleteByComment("abc")).
+                thenReturn(CompletableFuture.completedFuture(0L));
         var res = service.deleteAllByComment("abc").get();
 
         // Then
@@ -175,7 +199,9 @@ public class TicketServiceTests {
         Ticket ticket = mock();
 
         // When
-        when(ticketRepository.findFirstByEventIsNotNullOrderByEvent_IdAsc()).thenReturn(Optional.of(ticket));
+        when(ticketRepository.findFirstByEventIsNotNullOrderByEventIdAsc()).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.of(ticket)));
         var res = service.getWithMinEvent().get();
 
         // Then
@@ -185,7 +211,9 @@ public class TicketServiceTests {
     @Test
     void testGetWithMinEventEmpty() throws Exception {
         // When
-        when(ticketRepository.findFirstByEventIsNotNullOrderByEvent_IdAsc()).thenReturn(Optional.empty());
+        when(ticketRepository.findFirstByEventIsNotNullOrderByEventIdAsc()).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.empty()));
         var res = service.getWithMinEvent().get();
 
         // Then
@@ -196,7 +224,8 @@ public class TicketServiceTests {
     @Test
     void testCountByCommentLess() throws Exception {
         // When
-        when(ticketRepository.countByCommentLessThan("aaa")).thenReturn(5L);
+        when(ticketRepository.countByCommentLessThan("aaa")).
+            thenReturn(CompletableFuture.completedFuture(5L));
         var res = service.countByCommentLess("aaa").get();
 
         // Then
@@ -206,7 +235,8 @@ public class TicketServiceTests {
     @Test
     void testFailCountByCommentLess() throws Exception {
         // When
-        when(ticketRepository.countByCommentLessThan(anyString())).thenThrow(new RuntimeException("fail"));
+        when(ticketRepository.countByCommentLessThan(anyString())).
+                thenReturn(CompletableFuture.failedFuture(new RuntimeException("fail")));
         var res = service.countByCommentLess("aaa").get();
 
         // Then
@@ -221,8 +251,12 @@ public class TicketServiceTests {
         var person = new Person();
 
         // When
-        when(ticketRepository.findById(1)).thenReturn(Optional.of(ticket));
-        when(personRepository.findById(1L)).thenReturn(Optional.of(person));
+        when(ticketRepository.findById(1)).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.of(ticket)));
+        when(personRepository.findById(1)).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.of(person)));
         var res = service.sellTicket(1, 1, 100f).get();
 
         // Then
@@ -233,13 +267,7 @@ public class TicketServiceTests {
 
     @Test
     void testFailSellTicketInvalidAmount() throws Exception {
-        // Given
-        var ticket = new Ticket();
-        var person = new Person();
-
         // When
-        when(ticketRepository.findById(1)).thenReturn(Optional.of(ticket));
-        when(personRepository.findById(1L)).thenReturn(Optional.of(person));
         var res = service.sellTicket(1, 1, -5f).get();
 
         // Then
@@ -249,7 +277,8 @@ public class TicketServiceTests {
     @Test
     void testFailSellTicketNoTicket() throws Exception {
         // When
-        when(ticketRepository.findById(1)).thenReturn(Optional.empty());
+        when(ticketRepository.findById(1)).
+                thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         var res = service.sellTicket(1, 1, 50f).get();
 
         // Then
@@ -260,8 +289,12 @@ public class TicketServiceTests {
     void testFailSellTicketNoPerson() throws Exception {
         // When
         Ticket ticket = mock();
-        when(ticketRepository.findById(1)).thenReturn(Optional.of(ticket));
-        when(personRepository.findById(1L)).thenReturn(Optional.empty());
+        when(ticketRepository.findById(1)).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.of(ticket)));
+        when(personRepository.findById(1)).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.empty()));
         var res = service.sellTicket(1, 1, 50f).get();
 
         // Then
@@ -280,7 +313,9 @@ public class TicketServiceTests {
         ticket.setType(TicketType.USUAL);
 
         // When
-        when(ticketRepository.findById(1)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.findById(1)).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.of(ticket)));
         when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
         var copy = service.cloneVip(1).get();
 
@@ -295,7 +330,9 @@ public class TicketServiceTests {
     @Test
     void testCloneVipNotFound() throws Exception {
         // When
-        when(ticketRepository.findById(1)).thenReturn(Optional.empty());
+        when(ticketRepository.findById(1)).
+                thenReturn(CompletableFuture.
+                        completedFuture(Optional.empty()));
         var res = service.cloneVip(1).get();
 
         // Then

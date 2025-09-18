@@ -3,13 +3,27 @@ package systems.project.controllers;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+
+
+
+
+
+
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import systems.project.exceptions.InvalidDataException;
 import systems.project.models.CloneRequest;
+import systems.project.models.ErrorResponseDto;
 import systems.project.models.SellRequestDTO;
 import systems.project.models.Ticket;
-import systems.project.repositories.TicketRepository;
 import systems.project.services.TicketEventService;
 import systems.project.services.TicketService;
 
@@ -77,26 +91,36 @@ public class TicketController {
     }
 
     @DeleteMapping("/delete_ticket/{id}")
-    public CompletableFuture<ResponseEntity<String>> deleteTicket(@PathVariable Long id) {
+    public CompletableFuture<ResponseEntity<ErrorResponseDto>> deleteTicket(@PathVariable Integer id) {
         return ticketService.removeTicket(id)
                 .thenApply(ok -> {
                     if (ok) {
                         events.publishChange("delete", id.intValue());
                         return ResponseEntity.ok().build();
                     }
-                    return ResponseEntity.badRequest().body("Ошибка при удалении объекта, возможно его не существует");
+                    return ResponseEntity.badRequest().
+                            body(ErrorResponseDto.builder()
+                                    .title("Возникла ошибка")
+                                    .errorMessage("Ошибка при удалении объекта, возможно его не существует")
+                                    .build()
+                            );
                 });
     }
 
     @DeleteMapping("/delete_by_comment")
-    public CompletableFuture<ResponseEntity<String>> deleteByComment(@RequestParam String commentEq) {
+    public CompletableFuture<ResponseEntity<ErrorResponseDto>> deleteByComment(@RequestParam String commentEq) {
         return ticketService.deleteAllByComment(commentEq)
                 .thenApply(ok -> {
                     if (ok) {
                         events.publishChange("bulk-delete", null);
                         return ResponseEntity.ok().build();
                     }
-                    return ResponseEntity.badRequest().body("Возможно не было найдено объектов с таким же Comment");
+                    return ResponseEntity.badRequest().
+                            body(ErrorResponseDto.builder()
+                                    .title("Возникла ошибка")
+                                    .errorMessage("Возможно не было найдено объектов с таким же Comment")
+                                    .build()
+                            );
                 });
     }
     @GetMapping("/min_event_ticket")
@@ -116,7 +140,7 @@ public class TicketController {
         return ticketService.sellTicket(req.ticketId, req.personId, req.amount)
                 .thenApply(ok -> {
 
-                    if(ok){
+                    if (ok) {
                         events.publishChange("ticket-sell", null);
                         return ResponseEntity.ok(Map.of("status", true));
 
@@ -129,8 +153,8 @@ public class TicketController {
     @PostMapping("/clone_vip")
     public CompletableFuture<ResponseEntity<Ticket>> cloneVip(@RequestBody CloneRequest req) {
         return ticketService.cloneVip(req.ticketId)
-                .thenApply(copy ->{
-                    if(copy != null ){
+                .thenApply(copy -> {
+                    if (copy != null ) {
                         events.publishChange("vip-clone", null);
                         return ResponseEntity.ok(copy);
                     }

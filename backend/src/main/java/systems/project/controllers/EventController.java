@@ -1,9 +1,12 @@
 package systems.project.controllers;
 
 
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import systems.project.models.Event;
 import systems.project.services.EventService;
 
@@ -23,17 +26,17 @@ public class EventController {
     }
 
     @GetMapping("/get_events")
-    public CompletableFuture<ResponseEntity<Map<String, List<Event>>>> getEvents(){
+    public CompletableFuture<ResponseEntity<Map<String, List<Event>>>> getEvents() {
         return service.getEvents()
                 .thenApply(ResponseEntity::ok);
     }
 
     @PostMapping("/add_event")
-    public CompletableFuture<ResponseEntity<Map<String, Boolean>>> add_event(@RequestBody Event event){
+    public CompletableFuture<ResponseEntity<Map<String, Boolean>>> addEvent(@RequestBody Event event) {
 
         return service.addEvent(event)
-                .thenApply(res ->{
-                    if(res.get("status")) return ResponseEntity.ok(res);
+                .thenApply(res -> {
+                    if (res.get("status")) return ResponseEntity.ok(res);
                     return ResponseEntity.badRequest().body(Map.of("status", false));
                 });
     }

@@ -1,6 +1,11 @@
 package systems.project.models;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +23,8 @@ public class Location {
             sequenceName = "location_seq",
             allocationSize = 1
     )
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "location_seq_gen")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+            generator = "location_seq_gen")
     private Long id;
 
     @Column(nullable = false)

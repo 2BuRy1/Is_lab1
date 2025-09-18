@@ -30,7 +30,7 @@ public class TicketEventService {
                     .reconnectTime(3000)
                     .id(String.valueOf(System.currentTimeMillis()))
                     .build());
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) { }
 
         return emitter;
     }

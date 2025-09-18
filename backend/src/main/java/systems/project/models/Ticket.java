@@ -1,6 +1,20 @@
 package systems.project.models;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+
+
+import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,7 +34,10 @@ public class Ticket {
     )
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ticket_seq_gen")
     @Id
-    private Integer id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
+    private Integer id; //Поле не может быть null,
+    // Значение поля должно быть больше 0,
+    // Значение этого поля должно быть уникальным,
+    // Значение этого поля должно генерироваться автоматически
 
     @Column(nullable = false)
     private String name; //Поле не может быть null, Строка не может быть пустой
@@ -29,7 +46,8 @@ public class Ticket {
     @JoinColumn(name = "coordinates_id", nullable = false)
     private Coordinates coordinates; //Поле не может быть null
 
-    private java.time.LocalDateTime creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
+    private java.time.LocalDateTime creationDate; //Поле не может быть null,
+    // Значение этого поля должно генерироваться автоматически
 
     @ManyToOne
     @JoinColumn(name = "person_id")
@@ -47,7 +65,9 @@ public class Ticket {
     private TicketType type; //Поле не может быть null
 
     @Check(constraints = "discount > 0 and discount <= 100")
-    private Float discount; //Поле может быть null, Значение поля должно быть больше 0, Максимальное значение поля: 100
+    private Float discount; //Поле может быть null,
+    // Значение поля должно быть больше 0,
+    // Максимальное значение поля: 100
 
     @Check(constraints = "number > 0")
     private int number; //Значение поля должно быть больше 0
@@ -60,7 +80,9 @@ public class Ticket {
     private Venue venue; //Поле может быть null
 
     @PrePersist
-    void prePersist(){
-        creationDate = creationDate == null ? LocalDateTime.now() : creationDate;
+    void prePersist() {
+        creationDate = creationDate == null ?
+                LocalDateTime.now() :
+                    creationDate;
     }
 }
