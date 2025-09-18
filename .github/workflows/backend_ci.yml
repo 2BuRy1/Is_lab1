@@ -19,13 +19,6 @@ jobs:
           cache: "gradle"
       - run: ./gradlew --version
       - run: ./gradlew check
-      - run: ./gradlew test
-      - run: ./gradlew build -x test
-      - name: Upload jar
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend_jar
-          path: backend/build/libs/*.jar
 
   test:
     needs: [lint]
@@ -44,7 +37,7 @@ jobs:
       - run: ./gradlew test
   build:
     needs: [test]
-    runs-on: ubunru-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
@@ -59,6 +52,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    environment: Is_lab
     steps:
       - uses: actions/download-artifact@v4
         with:
