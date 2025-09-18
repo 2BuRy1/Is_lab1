@@ -60,6 +60,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: backend_jar
+          path: dist
+
+      - run: ls -al dist
 
       - name: Upload jar to server
         uses: appleboy/scp-action@v0.1.7
@@ -68,7 +71,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "backend_jar/*.jar"
+          source: "dist/*.jar"
           target: "~/app"
 
       - name: Start app
