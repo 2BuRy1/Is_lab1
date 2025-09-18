@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  lint-and-test:
+  lint:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -20,6 +20,35 @@ jobs:
       - run: ./gradlew --version
       - run: ./gradlew check
       - run: ./gradlew test
+      - run: ./gradlew build -x test
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend_jar
+          path: backend/build/libs/*.jar
+
+  test:
+    needs: [lint]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "gradle"
+      - run: ./gradlew test
+  build:
+    needs: [test]
+    runs-on: ubunru-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
       - run: ./gradlew build -x test
       - name: Upload jar
         uses: actions/upload-artifact@v4

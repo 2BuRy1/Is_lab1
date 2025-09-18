@@ -1,4 +1,4 @@
-name: FrontCheck
+name: FrontCheck + Deploy
 
 on:
   push:
