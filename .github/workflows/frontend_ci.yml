@@ -58,7 +58,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: Is_lab
     steps:
       - uses: actions/download-artifact@v4
         with:

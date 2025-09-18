@@ -14,9 +14,9 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
-          cache: "gradle"
+          cache: gradle
       - run: ./gradlew --version
       - run: ./gradlew check
 
@@ -31,10 +31,11 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
-          cache: "gradle"
+          cache: gradle
       - run: ./gradlew test
+
   build:
     needs: [test]
     runs-on: ubuntu-latest
@@ -42,7 +43,14 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - run: ./gradlew build -x test
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - run: ./gradlew clean build -x test
       - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
@@ -52,12 +60,12 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: Is_lab
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: backend_jar
           path: jar
+
       - name: Upload jar to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -67,6 +75,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           source: "jar/*.jar"
           target: "~/app"
+
       - name: Start app
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -75,7 +84,19 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e
             mkdir -p ~/app
-            JAR=$(ls -t ~//*.jar | head -n1)
-            (fuser -k 8080/tcp || true) >/dev/null 2>&1
-            nohup java -jar "$JAR" > ~/app/app.log 2>&1 &
+            cd ~/app
+            # берём самый свежий jar, который только что загрузили
+            JAR=$(ls -t *.jar | head -n1)
+
+            # останавливаем то, что слушает 8080 (lsof -> fuser fallback)
+            if command -v lsof >/dev/null 2>&1; then
+              PID=$(lsof -t -i:8080 || true)
+              if [ -n "$PID" ]; then kill -9 "$PID" || true; fi
+            else
+              fuser -k 8080/tcp || true
+            fi
+
+            nohup java -jar "$JAR" > app.log 2>&1 &
+            echo "Started $JAR"
