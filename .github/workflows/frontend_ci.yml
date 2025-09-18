@@ -81,4 +81,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "build/*"
-          target: "~/public_html"
+          target: "~/."
+      - run: cp -r ./build ./public_html
