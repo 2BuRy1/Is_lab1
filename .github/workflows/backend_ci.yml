@@ -92,5 +92,6 @@ jobs:
             else
               fuser -k 8080/tcp || true
             fi
+            $(cat ../../.env | xargs)
             nohup java -jar "$JAR" > app.log 2>&1 &
             echo "Started $JAR"
