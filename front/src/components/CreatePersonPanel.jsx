@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import '../styles/edit.css';
+import '../styles/edit.scss';
 import { api } from './api';
 
 const COLORS = ['GREEN', 'RED', 'ORANGE', 'WHITE', 'BROWN'];

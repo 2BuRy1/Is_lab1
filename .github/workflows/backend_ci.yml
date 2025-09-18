@@ -1,21 +1,58 @@
-name: TestCheck
-on: push
+name: TestCheck+Deploy
+
+on:
+  push:
 
 jobs:
-  lint:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "gradle"
+      - run: ./gradlew --version
+      - run: ./gradlew check
+      - run: ./gradlew test
+      - run: ./gradlew build -x test
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend_jar
+          path: backend/build/libs/*.jar
+
+  deploy:
+    needs: lint-and-test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Run linter
-        run: ./gradlew check
-        working-directory: backend
-  test:
-    needs: [lint]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Run tests
-        run: ./gradlew test
-        working-directory: backend
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend_jar
+          path: jar
+      - name: Upload jar to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "jar/*.jar"
+          target: "~/app"
+      - name: Start app
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p ~/app
+            JAR=$(ls -t ~//*.jar | head -n1)
+            (fuser -k 8080/tcp || true) >/dev/null 2>&1
+            nohup java -jar "$JAR" > ~/app/app.log 2>&1 &

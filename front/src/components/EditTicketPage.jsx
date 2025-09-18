@@ -2,7 +2,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
-import '../styles/edit.css';
+import '../styles/edit.scss';
 import { api } from './api';
 
 const ENDPOINTS = {

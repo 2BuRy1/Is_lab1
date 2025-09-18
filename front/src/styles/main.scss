@@ -1,3 +1,5 @@
+@import 'colors';
+
 .page {
   padding: 16px;
   display: grid;
@@ -13,40 +15,41 @@
 
 .btn {
   padding: 8px 12px;
-  border: 1px solid #ccc;
-  background: #f7f7f7;
+  border: 1px solid $color-border;
+  background: $color-bg-main;
   border-radius: 8px;
   cursor: pointer;
-}
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: default;
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
 }
 
 .btn-danger {
-  border-color: #d66;
-  background: #ffeaea;
+  border-color: $color-border-danger;
+  background: $color-bg-danger;
 }
 
 .status-ok {
   margin-left: 8px;
-  color: #1b8a1b;
+  color: $color-status-ok;
 }
 
 .status-err {
   margin-left: 8px;
-  color: #c22;
+  color: $color-status-err;
 }
 
 .details-card {
   margin: 12px auto 0;
   max-width: 1100px;
   width: 100%;
-  border: 1px solid #ddd;
+  border: 1px solid $color-border-light;
   border-radius: 8px;
-  background: #fafafa;
+  background: $color-bg-card;
   padding: 12px 16px;
+  text-align: left;
 }
 
 .details-head {
@@ -61,41 +64,30 @@
 }
 
 .btn.btn-light {
-  background: #fff;
-  border: 1px solid #ccc;
-}
-
-.details-card {
-  margin: 12px 0 0 0;
-  max-width: 1100px;
-  width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fafafa;
-  padding: 12px 16px;
-  text-align: left;
+  background: $color-bg-white;
+  border: 1px solid $color-border;
 }
 
 .details-block {
   margin-top: 12px;
   padding: 8px 12px;
-  border-left: 3px solid #ccc;
-  background: #fff;
+  border-left: 3px solid $color-border;
+  background: $color-bg-white;
   border-radius: 4px;
 }
 
 .search-input {
   padding: 6px 8px;
-  border: 1px solid #ccc;
+  border: 1px solid $color-border;
   border-radius: 6px;
   width: 100px;
 }
 
 .btn-secondary {
-  background: #e0e0e0;
-  border: 1px solid #bbb;
-}
+  background: $color-bg-light;
+  border: 1px solid $color-border-secondary;
 
-.btn-secondary:hover {
-  background: #d5d5d5;
+  &:hover {
+    background: $color-bg-light-hover;
+  }
 }

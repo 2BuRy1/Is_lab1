@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/function.css';
+import '../styles/function.scss';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from './api';
@@ -31,7 +31,9 @@ export default function FunctionsPanel() {
       show(true, 'Удалено');
       setCommentEq('');
     } catch (e) {
-      e.response.data ? show(false, `${e.response.data.title} ${e.response.data.message}`) : show(false, `${e.response.data.title} ${e.response.data.errorMessage}`);
+      e.response.data
+        ? show(false, `${e.response.data.title} ${e.response.data.message}`)
+        : show(false, `${e.response.data.title} ${e.response.data.errorMessage}`);
     }
   };
 

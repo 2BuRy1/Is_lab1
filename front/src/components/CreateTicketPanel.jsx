@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import '../styles/edit.css';
+import '../styles/edit.scss';
 import { api } from './api';
 
 const TICKET_TYPES = ['VIP', 'USUAL', 'BUDGETARY', 'CHEAP'];
