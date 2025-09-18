@@ -57,7 +57,7 @@ jobs:
           path: backend/build/libs/*.jar
 
   deploy:
-    needs: lint-and-test
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
