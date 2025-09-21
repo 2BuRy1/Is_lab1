@@ -11,7 +11,7 @@ public class Config {
 
 
     @Bean
-    public Logger logger(){
+    public Logger logger() {
         var log = Logger.getLogger(getClass().getName());
         log.setLevel(Level.INFO);
         return log;

@@ -29,7 +29,9 @@ public class TicketEventService {
         });
         emitter.onError(ex -> {
             emitters.remove(emitter);
-            try { emitter.complete(); } catch (Exception ignored) {}
+            try {
+                emitter.complete();
+            } catch (Exception ignored) { }
         });
         try {
             emitter.send(SseEmitter.event()
