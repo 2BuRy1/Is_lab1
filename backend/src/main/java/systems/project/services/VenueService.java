@@ -23,7 +23,7 @@ public class VenueService {
 
     @Async
     public CompletableFuture<Map<String, List<Venue>>> getVenues() {
-        return CompletableFuture.supplyAsync(() -> venueRepository.findAll())
+        return venueRepository.findAllBy()
                 .thenApply(venues -> Map.of("venues", venues))
                     .exceptionally(exc -> Map.of("status", null));
     }

@@ -1,4 +1,4 @@
-package systems.project.models;
+package systems.project.models.api;
 
 import lombok.Data;
 

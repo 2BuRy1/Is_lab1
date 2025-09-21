@@ -122,12 +122,12 @@ class GetAndSaveTests {
         List<Venue> venues = mock();
 
         //When
-        when(venueRepository.findAll()).thenReturn(venues);
+        when(venueRepository.findAllBy()).thenReturn(CompletableFuture.completedFuture(venues));
         var res = venueService.getVenues().get();
 
         //Then
         assertNotNull(res.get("venues"));
-        verify(venueRepository).findAll();
+        verify(venueRepository).findAllBy();
 
 
 
